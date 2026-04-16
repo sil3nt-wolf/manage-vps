@@ -1,14 +1,13 @@
-# Contributing to XCASPER MANAGER
+# Contributing to WOLF TECH VPS MANAGER
 
-Thank you for your interest in contributing. XCASPER MANAGER is an open-source project by [TRABY CASPER](https://github.com/Casper-Tech-ke) and community contributions are welcome.
+Thank you for your interest in contributing. WOLF TECH VPS MANAGER is an open-source project by [WOLF TECH](https://xwolf.space) and community contributions are welcome.
 
 ---
 
 ## Before You Start
 
-- Check the [open issues](https://github.com/Casper-Tech-ke/vps-manager/issues) to see if your idea or bug is already tracked.
+- Check the [open issues](https://github.com/sil3nt-wolf/manage-vps/issues) to see if your idea or bug is already tracked.
 - For large changes, open an issue first to discuss the approach before writing code.
-- For questions or informal discussion, reach out on [Telegram](https://t.me/casper_tech_ke).
 
 ---
 
@@ -16,19 +15,19 @@ Thank you for your interest in contributing. XCASPER MANAGER is an open-source p
 
 ### 1. Fork the repository
 
-Click **Fork** on GitHub, or visit [github.com/Casper-Tech-ke/vps-manager/fork](https://github.com/Casper-Tech-ke/vps-manager/fork).
+Click **Fork** on GitHub, or visit [github.com/sil3nt-wolf/manage-vps/fork](https://github.com/sil3nt-wolf/manage-vps/fork).
 
 ### 2. Clone your fork
 
 ```bash
-git clone https://github.com/<your-username>/vps-manager.git
-cd vps-manager
+git clone https://github.com/<your-username>/manage-vps.git
+cd manage-vps
 ```
 
 ### 3. Add the upstream remote
 
 ```bash
-git remote add upstream https://github.com/Casper-Tech-ke/vps-manager.git
+git remote add upstream https://github.com/sil3nt-wolf/manage-vps.git
 ```
 
 ### 4. Create a feature branch
@@ -84,7 +83,7 @@ docs: add API reference table to README
 git push origin feat/my-feature
 ```
 
-Then open a PR on GitHub against `Casper-Tech-ke/vps-manager:main`.
+Then open a PR on GitHub against `sil3nt-wolf/manage-vps:main`.
 
 ---
 
@@ -107,7 +106,7 @@ Before submitting your PR, please verify:
 - **TypeScript**: strict mode; avoid `any`; prefer explicit return types on exported functions
 - **React**: functional components only; hooks at the top level; no class components
 - **Naming**: `camelCase` for variables and functions; `PascalCase` for components and types; `kebab-case` for filenames
-- **CSS / Tailwind**: follow the existing xcasper.space theme — use the CSS variables and inline style pattern already in the codebase; do not introduce new colour palettes
+- **CSS / Tailwind**: follow the WOLF TECH theme — neon green `#00ff00` primary, black backgrounds, Orbitron font for headings, JetBrains Mono for code; use the CSS variables and inline style pattern already in the codebase; do not introduce new colour palettes
 - **API routes**: add new routes in a dedicated `routes/<name>.ts` file and register them in `routes/index.ts`; always apply `requireApiKey` middleware for protected endpoints
 
 ---
@@ -123,6 +122,7 @@ The project uses pnpm workspaces. Key packages:
 | `@workspace/api-spec` | `lib/api-spec` | OpenAPI 3.1 spec |
 | `@workspace/api-client-react` | `lib/api-client-react` | Generated React Query hooks |
 | `@workspace/api-zod` | `lib/api-zod` | Generated Zod schemas |
+| `@workspace/db` | `lib/db` | Drizzle ORM schema + migrations |
 
 When you add or change an API endpoint, update the OpenAPI spec and regenerate the client:
 

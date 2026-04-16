@@ -2,7 +2,7 @@
 
 ## Supported Versions
 
-Only the latest release of XCASPER MANAGER receives security fixes.
+Only the latest release of WOLF TECH VPS MANAGER receives security fixes.
 
 | Version | Supported |
 |---|---|
@@ -17,8 +17,8 @@ Only the latest release of XCASPER MANAGER receives security fixes.
 
 If you discover a security issue, please report it through one of the following channels:
 
-1. **Support portal** (preferred): [support.xcasper.space](https://support.xcasper.space)
-2. **Telegram** (for urgent issues): [@casper_tech_ke](https://t.me/casper_tech_ke)
+1. **GitHub** (preferred): Open a private [Security Advisory](https://github.com/sil3nt-wolf/manage-vps/security/advisories/new)
+2. **Website**: [xwolf.space](https://xwolf.space)
 
 Include the following in your report:
 
@@ -73,6 +73,8 @@ We will publicly acknowledge your contribution in the release notes (unless you 
 
 ## Security Design Notes
 
-- XCASPER MANAGER is designed to run on a **trusted private network** or behind a reverse proxy with TLS.
+- WOLF TECH VPS MANAGER is designed to run on a **trusted private network** or behind a reverse proxy with TLS.
 - The `API_KEY` should be treated as a secret — use an environment variable or secrets manager, never hard-code it.
+- The API key can be rotated at any time from the **Settings** page inside the app.
 - The terminal panel (`POST /api/terminal/exec`) executes commands as the user running the Node.js process. Restrict access accordingly.
+- HTTPS is enforced via Cloudflare proxy on the official instance at [manage-vps.xwolf.space](https://manage-vps.xwolf.space).
