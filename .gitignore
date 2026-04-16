@@ -47,6 +47,10 @@ Thumbs.db
 # Replit — internal files, not for the public repo
 .cache/
 .local/
+.agents/
 replit.md
 attached_assets/
 **/.replit-artifact/
+.replit
+.replitignore
+scripts/
