@@ -1,16 +1,17 @@
-# XCASPER MANAGER
+# WOLF TECH VPS MANAGER
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-6e5cff.svg)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-00ff00.svg)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue.svg)](https://www.typescriptlang.org/)
-[![Node.js](https://img.shields.io/badge/Node.js-24-green.svg)](https://nodejs.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-22-green.svg)](https://nodejs.org/)
 [![Express](https://img.shields.io/badge/Express-5-lightgrey.svg)](https://expressjs.com/)
 [![React](https://img.shields.io/badge/React-18-61dafb.svg)](https://react.dev/)
+[![Live](https://img.shields.io/badge/Live-manage--vps.xwolf.space-00ff00.svg)](https://manage-vps.xwolf.space)
 
-**A self-hosted, browser-based VPS file manager and control panel** — part of the [xcasper.space](https://xcasper.space) brand family by [TRABY CASPER](https://github.com/Casper-Tech-ke).
+**A self-hosted, browser-based VPS file manager and control panel** — built and maintained by [WOLF TECH](https://xwolf.space).
 
-> *We believe in building together.*
+> *Full control of your server. From any browser. No SaaS. No subscriptions. No telemetry.*
 
-No SaaS. No subscriptions. No telemetry. Deploy it on your own server, secure it with your own API key, and manage your filesystem from anywhere.
+Deploy it on your own server, secure it with your own API key, and manage your filesystem from anywhere.
 
 > [!IMPORTANT]
 > **You must set `API_KEY` in your `.env` file before running the app.**
@@ -19,9 +20,17 @@ No SaaS. No subscriptions. No telemetry. Deploy it on your own server, secure it
 
 ---
 
+## Live Instance
+
+**[https://manage-vps.xwolf.space](https://manage-vps.xwolf.space)**
+
+Hosted on a Debian 13 VPS, served via nginx + PM2, secured with Cloudflare proxy (HTTPS).
+
+---
+
 ## Screenshot
 
-![XCASPER MANAGER — System Dashboard](docs/screenshot-dashboard.jpg)
+![WOLF TECH VPS MANAGER — System Dashboard](docs/screenshot-dashboard.png)
 
 ---
 
@@ -37,8 +46,9 @@ No SaaS. No subscriptions. No telemetry. Deploy it on your own server, secure it
 | **Search** | Filename filter from the home page or directly via `?search=` URL param |
 | **Clear Cache** | `sync` + drop Linux page cache (root) or sync-only (non-root) |
 | **Authentication** | API-key login; Bearer token auto-injected into all requests via `sessionStorage` |
-| **Dev Page** | Developer bio, live GitHub repo card, fork walkthrough, support links |
-| **Theming** | Dark xcasper.space theme — purple `#6e5cff`, cyan `#0ff4c6`, bg `#08090d` |
+| **Settings** | Rotate API key, view server info, manage session from within the app |
+| **Dev Page** | Developer info, live GitHub repo card, fork walkthrough, support links |
+| **Theming** | WOLF TECH neon-green hacker aesthetic — `#00ff00` primary, pure black background, Orbitron + JetBrains Mono fonts |
 
 ---
 
@@ -46,15 +56,16 @@ No SaaS. No subscriptions. No telemetry. Deploy it on your own server, secure it
 
 ### Requirements
 
-- Node.js 20+ (tested on 24)
+- Node.js 20+ (tested on 22)
 - pnpm 9+
 - PM2 (for production)
+- PostgreSQL (for session storage)
 
 ### 1. Clone
 
 ```bash
-git clone https://github.com/Casper-Tech-ke/vps-manager.git
-cd vps-manager
+git clone https://github.com/sil3nt-wolf/manage-vps.git
+cd manage-vps
 ```
 
 ### 2. Install dependencies
@@ -78,15 +89,29 @@ API_KEY=your-secret-key-here
 
 # Session encryption secret — any long random string works
 SESSION_SECRET=any-random-string-here
+
+# PostgreSQL connection string
+DATABASE_URL=postgresql://user:password@localhost:5432/wolfvps
 ```
 
-> **Tip:** generate a strong key with `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
+> **Tip:** generate a strong key with:
+> ```bash
+> node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+> ```
 
-### 4. Development
+### 4. Push the database schema
 
 ```bash
-# Start both servers (API + frontend)
+pnpm --filter @workspace/db run db:push
+```
+
+### 5. Development
+
+```bash
+# Start API server
 pnpm --filter @workspace/api-server run dev &
+
+# Start frontend dev server
 pnpm --filter @workspace/vps-manager run dev
 ```
 
@@ -94,34 +119,69 @@ Open `http://localhost:5173` and sign in with your `API_KEY`.
 
 ---
 
-## Deployment with PM2
+## Deployment
 
-PM2 keeps the API server alive across reboots and crashes. All PM2 commands are available as pnpm scripts.
+### Automated (recommended)
 
-### 1. Build for production
+Use the included deploy scripts:
+
+```bash
+# First-time setup on a fresh VPS
+bash artifacts/vps-manager/deploy/setup.sh
+
+# Pull latest changes and restart
+bash artifacts/vps-manager/deploy/update.sh
+```
+
+### Manual
+
+#### 1. Build for production
 
 ```bash
 pnpm run build
 ```
 
-### 2. Start the API server with PM2
+> **Note:** If your VPS has less than 2 GB free RAM, build the frontend locally and upload the `dist/` folder via `scp` or `rsync` — the Vite build can OOM on low-memory servers.
+
+#### 2. Start with PM2
 
 ```bash
-pnpm run pm2:start
+pm2 start ecosystem.config.cjs --env production
+pm2 save
+pm2 startup   # register for auto-restart on reboot
 ```
 
-This runs `build` then launches the process defined in `ecosystem.config.cjs`.
+#### 3. Nginx reverse proxy
 
-### 3. Serve the frontend (static)
+```nginx
+server {
+    listen 80;
+    server_name your-domain.com;
 
-Build the frontend and serve it via nginx (or any static server):
+    # Serve the React frontend (static build)
+    root /path/to/manage-vps/artifacts/vps-manager/dist/public;
+    index index.html;
 
-```bash
-pnpm --filter @workspace/vps-manager run build
-# dist output → artifacts/vps-manager/dist/
+    # SPA fallback
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # Proxy API requests to Express
+    location /api/ {
+        proxy_pass http://127.0.0.1:8082;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
 ```
 
-### 4. PM2 script reference
+#### 4. PM2 script reference
 
 | Script | Command | What it does |
 |--------|---------|-------------|
@@ -135,102 +195,40 @@ pnpm --filter @workspace/vps-manager run build
 | `pm2:startup` | `pnpm run pm2:startup` | Generate systemd startup hook |
 | `pm2:delete` | `pnpm run pm2:delete` | Remove process from PM2 list |
 
-### 5. Auto-restart on server reboot
-
-```bash
-# Generate and register the startup hook (run once)
-pnpm run pm2:startup
-
-# Save current process list
-pnpm run pm2:save
-```
-
-### 6. Nginx reverse proxy (recommended)
-
-```nginx
-server {
-    listen 80;
-    server_name your-domain.com;
-
-    # Serve the React frontend (static build)
-    root /path/to/vps-manager/artifacts/vps-manager/dist;
-    index index.html;
-
-    # SPA fallback
-    location / {
-        try_files $uri $uri/ /index.html;
-    }
-
-    # Proxy API requests to Express
-    location /api/ {
-        proxy_pass http://127.0.0.1:8080;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_cache_bypass $http_upgrade;
-    }
-}
-```
-
----
-
-## ecosystem.config.cjs
-
-The PM2 process config is at the root of the project:
-
-```js
-module.exports = {
-  apps: [
-    {
-      name: "xcasper-api",
-      script: "./artifacts/api-server/dist/index.mjs",
-      interpreter: "node",
-      interpreter_args: "--enable-source-maps",
-      instances: 1,
-      autorestart: true,
-      watch: false,
-      max_memory_restart: "300M",
-      env_production: {
-        NODE_ENV: "production",
-        PORT: 8080,
-      },
-      error_file: "./logs/api-error.log",
-      out_file: "./logs/api-out.log",
-      log_date_format: "YYYY-MM-DD HH:mm:ss Z",
-    },
-  ],
-};
-```
-
 ---
 
 ## Tech Stack
 
 | Layer | Technology |
 |---|---|
-| **Frontend** | React 18, Vite, TypeScript, TanStack Query, Wouter, Tailwind CSS, shadcn/ui |
+| **Frontend** | React 18, Vite, TypeScript, TanStack Query, Wouter, Tailwind CSS |
 | **Backend** | Express 5, TypeScript, esbuild (ESM bundle) |
+| **Database** | PostgreSQL 17, Drizzle ORM |
 | **Process Manager** | PM2 |
-| **Validation** | Zod v4 (generated from OpenAPI spec via Orval) |
+| **Reverse Proxy** | nginx |
+| **CDN / SSL** | Cloudflare (proxy + free HTTPS) |
+| **Validation** | Zod v4 |
 | **Monorepo** | pnpm workspaces |
-| **Fonts** | Inter (UI), Fira Code (mono) |
+| **Fonts** | Orbitron (headings), JetBrains Mono (code/terminal) |
 
 ---
 
 ## Project Structure
 
 ```
-vps-manager/
+manage-vps/
 ├── artifacts/
 │   ├── api-server/          # Express 5 REST API
+│   │   └── src/             # Routes, middleware, system/file/PM2 handlers
 │   └── vps-manager/         # React + Vite frontend
+│       ├── src/pages/       # Home, Files, Terminal, Dev, Settings
+│       ├── public/          # favicon.svg
+│       └── deploy/          # setup.sh + update.sh automation scripts
 ├── lib/
 │   ├── api-spec/            # OpenAPI 3.1 spec + Orval codegen config
 │   ├── api-client-react/    # Generated React Query hooks
-│   └── api-zod/             # Generated Zod schemas
+│   ├── api-zod/             # Generated Zod schemas
+│   └── db/                  # Drizzle ORM schema + migrations
 ├── ecosystem.config.cjs     # PM2 process config
 ├── README.md
 ├── CHANGELOG.md
@@ -261,15 +259,15 @@ All endpoints are prefixed with `/api` and require `Authorization: Bearer <API_K
 | `GET` | `/pm2/list` | List all PM2 processes |
 | `POST` | `/pm2/:name/restart` | Restart a PM2 process |
 | `POST` | `/pm2/:name/stop` | Stop a PM2 process |
+| `POST` | `/settings/rotate-key` | Rotate the API key |
 
 ---
 
 ## Links
 
-- **Support**: [support.xcasper.space](https://support.xcasper.space)
-- **Sponsor**: [payments.xcasper.space](https://payments.xcasper.space)
-- **GitHub**: [github.com/Casper-Tech-ke](https://github.com/Casper-Tech-ke)
-- **Telegram**: [t.me/casper_tech_ke](https://t.me/casper_tech_ke)
+- **Live App**: [manage-vps.xwolf.space](https://manage-vps.xwolf.space)
+- **GitHub**: [github.com/sil3nt-wolf/manage-vps](https://github.com/sil3nt-wolf/manage-vps)
+- **WOLF TECH**: [xwolf.space](https://xwolf.space)
 
 ---
 
@@ -283,4 +281,4 @@ See [SECURITY.md](SECURITY.md) for responsible disclosure instructions.
 
 ## License
 
-[MIT](LICENSE) — Copyright 2025 TRABY CASPER / Casper-Tech-ke
+[MIT](LICENSE) — Copyright 2025 WOLF TECH / sil3nt-wolf
